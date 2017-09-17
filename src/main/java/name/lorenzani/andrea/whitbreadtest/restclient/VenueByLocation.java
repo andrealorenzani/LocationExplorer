@@ -1,5 +1,6 @@
 package name.lorenzani.andrea.whitbreadtest.restclient;
 
+import name.lorenzani.andrea.whitbreadtest.utils.FoursquareInvoker;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -21,24 +22,16 @@ import java.util.stream.Stream;
 @RestController
 public class VenueByLocation {
 
-    private final String url;
-    private final String authParams;
-    private final int maxApiRequest;
-    private final int max4SResults;
+    private final FoursquareInvoker invoker;
+    private final int maxRetrievedPerRequest;
     private static final Set<String> sections = new HashSet<>(Arrays.asList("food", "drinks", "coffee", "shops", "arts", "outdoors", "sights", "trending", "specials", "nextVenues", "topPicks"));
 
     @Autowired
-    public VenueByLocation(@Value("${foursquare.baseuri}") String baseUri,
-                           @Value("${foursquare.explore}") String explore,
-                           @Value("${foursquare.version.accepted}") String version,
-                           @Value("${foursquare.client}") String clientKey,
-                           @Value("${foursquare.secret}") String secretKey,
-                           @Value("${app.maxApiRequestPerSearch}") Integer maxApiRequest,
-                           @Value("${foursquare.maxApiResults}") Integer maxApiResults) {
-        this.url = baseUri + explore;
-        this.authParams = String.format("&client_id=%s&client_secret=%s&v=%s&m=foursquare", clientKey, secretKey,version);
-        this.maxApiRequest = maxApiRequest;
-        this.max4SResults = maxApiResults;
+    public VenueByLocation(@Value("${app.maxApiRequestPerSearch}") Integer maxApiRequest,
+                           @Value("${foursquare.maxApiResults}") Integer maxApiResults,
+                           FoursquareInvoker invoker) {
+        this.maxRetrievedPerRequest = maxApiRequest*maxApiResults;
+        this.invoker = invoker;
     }
 
     @RequestMapping("/")
@@ -58,67 +51,42 @@ public class VenueByLocation {
 
     @RequestMapping("/search/{location}/{query}/{limit}")
     public VenueByLocationResponse locationAndTypeLimited(@PathVariable String location, @PathVariable String query, @PathVariable Integer limit){
-        String path = basicPath(location);
+        String params = "";
         if(Optional.ofNullable(query).isPresent() && !query.isEmpty()) {
-            if(sections.contains(query.trim().toLowerCase())) path+=String.format("&section=%s", query.trim().toLowerCase());
-            else path+=String.format("&query=%s", query.trim().toLowerCase());
+            if(sections.contains(query.trim().toLowerCase())) params = String.format("&section=%s", query.trim().toLowerCase());
+            else params = String.format("&query=%s", query.trim().toLowerCase());
         }
-        return callFoursquareApi(location, path, Optional.ofNullable(limit).orElse(0));
+        return callFoursquareApi(location, params, Optional.ofNullable(limit).orElse(0));
     }
 
     @RequestMapping("/query/{location}")
     public String basicPath(@PathVariable String location) {
-        return url+location+authParams;
+        return invoker.getExploreUrl(location);
     }
 
-    private VenueByLocationResponse callFoursquareApi(String location, String path, int limit){
+    private VenueByLocationResponse callFoursquareApi(String location, String params, int limit){
         // Please note that on the website limit is max 50 but then the api true limit is 100
-        RestTemplate restTemplate = new RestTemplate();
-        String limitedPath = path + String.format("&limit=%d", (limit>0)?limit:100);
-        VenueResponse foursquareRes = restTemplate.getForObject(limitedPath, VenueResponse.class);
-        long maxToRetrieve = Math.min(foursquareRes.getResponse().getTotalResults(), max4SResults*maxApiRequest); // TotalResult is a required field
+        VenueResponse foursquareRes = new VenueResponse();
+        try{
+            foursquareRes = invoker.invokeExplore(location, limit, params).get();
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+        long maxToRetrieve = Math.min(foursquareRes.getResponse().getTotalResults(), maxRetrievedPerRequest); // TotalResult is a required field
         if(limit > 0 && limit < maxToRetrieve) maxToRetrieve = limit;
-        System.out.println(String.format("Requested query for %s and retrieved %d venues", location, foursquareRes.getResponse().getTotalResults()));
-        System.out.println(path);
         VenueByLocationResponse res = new VenueByLocationResponse(location, foursquareRes);
-        res.getRecommendedVenues().addAll(invoke4SquareInParallel(path, res.getTotalRes(), maxToRetrieve));
+        try {
+            invoker.invokeMultipleExplore(location, res.getTotalRes(), maxToRetrieve, params)
+                   .get()
+                   .forEach(venueResponse -> res.getRecommendedVenues().addAll(new VenueByLocationResponse("", venueResponse).getRecommendedVenues()));
+        }
+        catch (Exception e){
+            e.printStackTrace();
+        }
         res.setTotalRes(res.getRecommendedVenues().size());
         return res;
     }
 
-    private List<RecommendedVenue> invoke4SquareInParallel(String path, long start, long end) {
-        if(start >= end) return Collections.emptyList();
-        List<Future<VenueResponse>> allSearches = new ArrayList<>();
-        for(long s=start;s<end;s=s+100){
-            allSearches.add(processingSingleRequest(path, s));
-            if(!allSearches.stream().allMatch(Future::isDone)) {
-                System.out.print("Requesting in parallel...");
-                while(!allSearches.stream().allMatch(Future::isDone)){
-                    try{
-                        Thread.sleep(500);
-                        System.out.print(".");
-                    } catch(Exception e) {
-                        System.out.print("x");
-                    }
-                    allSearches.removeIf(Future::isCancelled);
-                }
-                System.out.println();
-            }
-        }
-        List<RecommendedVenue> recommendedVenues = new ArrayList<>();
-        allSearches.forEach(fut -> {
-            try{ recommendedVenues.addAll(new VenueByLocationResponse("", fut.get()).getRecommendedVenues()); }
-            catch(Exception e){
-                System.out.println("Error executing the search: "+e.getMessage());
-            }
-        });
-        return recommendedVenues;
-    }
-
-    private Future<VenueResponse> processingSingleRequest(String path, long start){
-        final ExecutorService threadpool = Executors.newCachedThreadPool();
-        String limitedPath = path+String.format("&limit=100&offset=%d", start);
-        return threadpool.submit(() -> new RestTemplate().getForObject(limitedPath, VenueResponse.class));
-    }
 
 }
