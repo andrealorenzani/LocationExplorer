@@ -11,11 +11,11 @@ import org.springframework.test.context.junit4.SpringRunner;
 @SpringBootTest
 public class WhitbreadTestApplicationTests {
 
-	@Autowired
-	private ApplicationContext context;
+    @Autowired
+    private ApplicationContext context;
 
-	@Test
-	public void contextLoads() {
-	}
+    @Test
+    public void contextLoads() {
+    }
 
 }

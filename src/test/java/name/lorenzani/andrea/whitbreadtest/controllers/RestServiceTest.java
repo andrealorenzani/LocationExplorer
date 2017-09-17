@@ -1,16 +1,12 @@
 package name.lorenzani.andrea.whitbreadtest.controllers;
 
-import name.lorenzani.andrea.whitbreadtest.model.VenueByLocationResponse;
 import name.lorenzani.andrea.whitbreadtest.model.VenueResponse;
 import name.lorenzani.andrea.whitbreadtest.utils.FoursquareInvoker;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Matchers;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.client.RestClientTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.client.ExpectedCount;
@@ -22,6 +18,8 @@ import static org.springframework.test.web.client.match.MockRestRequestMatchers.
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withBadRequest;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
+
+//https://docs.spring.io/spring-boot/docs/current/reference/html/boot-features-testing.html
 
 @RunWith(SpringRunner.class)
 @RestClientTest(FoursquareInvoker.class)
@@ -45,7 +43,7 @@ public class RestServiceTest {
     @Test
     public void testMultipleInteraction()
             throws Exception {
-        for(int value=0; value<=1000; value++){
+        for (int value = 0; value <= 1000; value++) {
             this.server.expect(ExpectedCount.max(10), anything())
                     .andRespond(withSuccess("{\"response\":{\"geocode\": {}, \"headerLocation\": null, \"headerFullLocation\": \"test\", \"headerLocationGranularity\": null, \"totalResults\": 0, \"groups\": []}}", MediaType.APPLICATION_JSON));
         }
@@ -56,7 +54,7 @@ public class RestServiceTest {
     @Test
     public void testErrorInteraction()
             throws Exception {
-        for(int value=0; value<=1000; value++){
+        for (int value = 0; value <= 1000; value++) {
             this.server.expect(ExpectedCount.max(10), anything())
                     .andRespond(withBadRequest());
         }

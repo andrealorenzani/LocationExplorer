@@ -1,49 +1,28 @@
 package name.lorenzani.andrea.whitbreadtest.controllers;
 
-import name.lorenzani.andrea.whitbreadtest.exception.FoursquareException;
 import name.lorenzani.andrea.whitbreadtest.model.Response;
-import name.lorenzani.andrea.whitbreadtest.model.VenueByLocationResponse;
 import name.lorenzani.andrea.whitbreadtest.model.VenueResponse;
 import name.lorenzani.andrea.whitbreadtest.utils.FoursquareInvoker;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
-import org.springframework.http.converter.HttpMessageConverter;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.RequestBuilder;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.context.WebApplicationContext;
 
-import java.nio.charset.Charset;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import org.junit.*;
-import org.junit.runner.*;
-import org.springframework.beans.factory.annotation.*;
-import org.springframework.boot.test.autoconfigure.web.servlet.*;
-import org.springframework.boot.test.mock.mockito.*;
-
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.BDDMockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-
-import static org.junit.Assert.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @RunWith(SpringRunner.class)
 @WebMvcTest(VenueByLocation.class)

@@ -1,7 +1,5 @@
 package name.lorenzani.andrea.whitbreadtest.model;
 
-import name.lorenzani.andrea.whitbreadtest.model.*;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -16,28 +14,28 @@ public class VenueByLocationResponse {
     private int totalRes;
     private List<RecommendedVenue> recommendedVenues;
 
-    public VenueByLocationResponse(){
+    public VenueByLocationResponse() {
         recommendedVenues = new ArrayList<>();
     }
 
     public VenueByLocationResponse(String requestedLocation, VenueResponse response) {
-        this.requestedLocation=requestedLocation;
+        this.requestedLocation = requestedLocation;
         Optional<Response> responseObj = Optional.ofNullable(response.getResponse());
-        if(responseObj.isPresent()){
+        if (responseObj.isPresent()) {
             this.headerFullLocation = responseObj.get().getHeaderFullLocation();
             //this.totalRes = (int)responseObj.get().getTotalResult();
             this.granularity = responseObj.get().getHeaderLocationGranularity();
             Optional<GeoCode> geocode = Optional.ofNullable(responseObj.get().getGeocode());
-            if(geocode.isPresent()){
+            if (geocode.isPresent()) {
                 this.displayLocation = geocode.get().getDisplayString();
                 this.location = geocode.get().getWhere();
             }
             List<Group> groups = responseObj.get().getGroups();
-            this.recommendedVenues =  groups.stream()
-                                            .flatMap(group -> group.getItems()
-                                                                   .stream()
-                                                                   .map(item -> new RecommendedVenue(group.getType(), item)))
-                                            .collect(Collectors.toList());
+            this.recommendedVenues = groups.stream()
+                    .flatMap(group -> group.getItems()
+                            .stream()
+                            .map(item -> new RecommendedVenue(group.getType(), item)))
+                    .collect(Collectors.toList());
             this.totalRes = recommendedVenues.size();
         }
     }

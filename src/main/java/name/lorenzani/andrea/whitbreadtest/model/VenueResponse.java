@@ -6,15 +6,15 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 public class VenueResponse {
     private Response response;
 
+    public VenueResponse() {
+
+    }
+
     public Response getResponse() {
         return response;
     }
 
     public void setResponse(Response response) {
         this.response = response;
-    }
-
-    public VenueResponse() {
-
     }
 }

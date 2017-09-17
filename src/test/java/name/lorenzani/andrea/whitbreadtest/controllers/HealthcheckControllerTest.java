@@ -12,7 +12,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.Map;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
 
 
 @RunWith(SpringRunner.class)
@@ -22,13 +22,14 @@ public class HealthcheckControllerTest {
     @Autowired
     private TestRestTemplate restTemplate;
 
-    @Value(value = "${app.name}") private String value;
+    @Value(value = "${app.name}")
+    private String value;
 
     @Test
     public void itShouldGiveBackHealthyStatusWhenRequested() {
         Map body = this.restTemplate.getForObject("/status/", Map.class);
         assertTrue(body.get("status").equals(new Integer(200)));
-        assertTrue(body.get("message").equals("I am alive, "+value));
+        assertTrue(body.get("message").equals("I am alive, " + value));
     }
 
     @Test

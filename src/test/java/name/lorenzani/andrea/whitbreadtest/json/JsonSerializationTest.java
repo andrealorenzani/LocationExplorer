@@ -10,11 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.json.JsonTest;
 import org.springframework.boot.test.json.JacksonTester;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.web.client.RestTemplate;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(SpringRunner.class)
 @JsonTest
@@ -41,8 +38,8 @@ public class JsonSerializationTest {
     public void testEmptyDeserialize() throws Exception {
         VenueResponse res = this.jsonReader.parse("{\"response\":{\"geocode\": {}, \"headerLocation\": null, \"headerFullLocation\": null, \"headerLocationGranularity\": null, \"totalResults\": 0, \"groups\": []}}").getObject();
         Assert.assertTrue(res.getResponse() != null);
-        Assert.assertTrue(res.getResponse().getTotalResults()==0);
-        Assert.assertTrue(res.getResponse().getHeaderFullLocation()==null);
+        Assert.assertTrue(res.getResponse().getTotalResults() == 0);
+        Assert.assertTrue(res.getResponse().getHeaderFullLocation() == null);
         Assert.assertTrue(res.getResponse().getGeocode() != null);
     }
 
@@ -65,9 +62,9 @@ public class JsonSerializationTest {
     public void testUniqueDeserialize() throws Exception {
         VenueResponse res = this.jsonReader.parse(uniqueResult).getObject();
         Assert.assertTrue(res.getResponse() != null);
-        Assert.assertTrue(res.getResponse().getTotalResults()==53);
+        Assert.assertTrue(res.getResponse().getTotalResults() == 53);
         Assert.assertEquals("Sarzana", res.getResponse().getHeaderFullLocation());
-        Assert.assertEquals("Gemmi",res.getResponse().getGroups().get(0).getItems().get(0).getVenue().getName());
+        Assert.assertEquals("Gemmi", res.getResponse().getGroups().get(0).getItems().get(0).getVenue().getName());
     }
 
     @Test

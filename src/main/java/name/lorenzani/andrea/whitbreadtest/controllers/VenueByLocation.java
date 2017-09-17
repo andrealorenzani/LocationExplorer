@@ -4,6 +4,8 @@ import name.lorenzani.andrea.whitbreadtest.exception.FoursquareException;
 import name.lorenzani.andrea.whitbreadtest.model.VenueByLocationResponse;
 import name.lorenzani.andrea.whitbreadtest.model.VenueResponse;
 import name.lorenzani.andrea.whitbreadtest.utils.FoursquareInvoker;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -11,22 +13,27 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
 
 // https://developer.foursquare.com/docs/venues/explore
 
 @RestController
 public class VenueByLocation {
 
+    private static final Set<String> sections = new HashSet<>(Arrays.asList("food", "drinks", "coffee", "shops", "arts", "outdoors", "sights", "trending", "specials", "nextVenues", "topPicks"));
+    // Define the logger object for this class
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
     private final FoursquareInvoker invoker;
     private final int maxRetrievedPerRequest;
-    private static final Set<String> sections = new HashSet<>(Arrays.asList("food", "drinks", "coffee", "shops", "arts", "outdoors", "sights", "trending", "specials", "nextVenues", "topPicks"));
 
     @Autowired
     public VenueByLocation(@Value("${app.maxApiRequestPerSearch}") Integer maxApiRequest,
                            @Value("${foursquare.maxApiResults}") Integer maxApiResults,
                            FoursquareInvoker invoker) {
-        this.maxRetrievedPerRequest = maxApiRequest*maxApiResults;
+        this.maxRetrievedPerRequest = maxApiRequest * maxApiResults;
         this.invoker = invoker;
     }
 
@@ -46,10 +53,11 @@ public class VenueByLocation {
     }
 
     @RequestMapping("/search/{location}/{query}/{limit}")
-    public VenueByLocationResponse locationAndTypeLimited(@PathVariable String location, @PathVariable String query, @PathVariable Integer limit){
+    public VenueByLocationResponse locationAndTypeLimited(@PathVariable String location, @PathVariable String query, @PathVariable Integer limit) {
         String params = "";
-        if(Optional.ofNullable(query).isPresent() && !query.isEmpty()) {
-            if(sections.contains(query.trim().toLowerCase())) params = String.format("&section=%s", query.trim().toLowerCase());
+        if (Optional.ofNullable(query).isPresent() && !query.isEmpty()) {
+            if (sections.contains(query.trim().toLowerCase()))
+                params = String.format("&section=%s", query.trim().toLowerCase());
             else params = String.format("&query=%s", query.trim().toLowerCase());
         }
         return callFoursquareApi(location, params, Optional.ofNullable(limit).orElse(0));
@@ -60,25 +68,24 @@ public class VenueByLocation {
         return invoker.getExploreUrl(location);
     }
 
-    private VenueByLocationResponse callFoursquareApi(String location, String params, int limit){
+    private VenueByLocationResponse callFoursquareApi(String location, String params, int limit) {
         // Please note that on the website limit is max 50 but then the api true limit is 100
         VenueResponse foursquareRes = new VenueResponse();
-        try{
+        try {
             foursquareRes = invoker.invokeExplore(location, limit, params);
-        }
-        catch (Throwable e) {
-            e.printStackTrace();
-            throw new FoursquareException("Unable to call foursquare for exploring location "+location, e);
+        } catch (Throwable e) {
+            log.error("Unable to call Foursquare: " + e.getMessage(), e);
+            throw new FoursquareException("Unable to call foursquare for exploring location " + location, e);
         }
         long maxToRetrieve = Math.min(foursquareRes.getResponse().getTotalResults(), maxRetrievedPerRequest); // TotalResult is a required field
-        if(limit > 0 && limit < maxToRetrieve) maxToRetrieve = limit;
+        if (limit > 0 && limit < maxToRetrieve) maxToRetrieve = limit;
         VenueByLocationResponse res = new VenueByLocationResponse(location, foursquareRes);
         try {
             invoker.invokeMultipleExplore(location, res.getTotalRes(), maxToRetrieve, params)
-                   .forEach(venueResponse -> res.getRecommendedVenues().addAll(new VenueByLocationResponse("", venueResponse).getRecommendedVenues()));
-        }
-        catch (Exception e){
-            e.printStackTrace();
+                    .forEach(venueResponse -> res.getRecommendedVenues().addAll(new VenueByLocationResponse("", venueResponse).getRecommendedVenues()));
+        } catch (Exception e) {
+            log.error("Unable to retrieve multiple data from Foursquare: " + e.getMessage(), e);
+            throw new FoursquareException("Unable to call foursquare for exploring location " + location, e);
         }
         res.setTotalRes(res.getRecommendedVenues().size());
         return res;
