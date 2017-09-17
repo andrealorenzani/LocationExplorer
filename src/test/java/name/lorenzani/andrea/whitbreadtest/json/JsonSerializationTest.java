@@ -1,7 +1,7 @@
 package name.lorenzani.andrea.whitbreadtest.json;
 
 import name.lorenzani.andrea.whitbreadtest.model.RecommendedVenue;
-import name.lorenzani.andrea.whitbreadtest.controllers.VenueByLocationResponse;
+import name.lorenzani.andrea.whitbreadtest.model.VenueByLocationResponse;
 import name.lorenzani.andrea.whitbreadtest.model.VenueResponse;
 import org.junit.Assert;
 import org.junit.Test;
@@ -9,7 +9,10 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.json.JsonTest;
 import org.springframework.boot.test.json.JacksonTester;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.web.client.RestTemplate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -26,8 +29,8 @@ public class JsonSerializationTest {
     @Autowired
     private JacksonTester<VenueByLocationResponse> jsonWriter;
 
-    @Autowired
-    private JacksonTester<RecommendedVenue> json2Writer;
+    @MockBean
+    private RestTemplate template;
 
     @Test
     public void testSerialize() throws Exception {

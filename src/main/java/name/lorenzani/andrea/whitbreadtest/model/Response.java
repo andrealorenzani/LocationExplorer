@@ -58,6 +58,7 @@ public class Response {
     }
 
     public Long getTotalResults() {
+        if(totalResults==null) return 0l;
         return totalResults;
     }
 

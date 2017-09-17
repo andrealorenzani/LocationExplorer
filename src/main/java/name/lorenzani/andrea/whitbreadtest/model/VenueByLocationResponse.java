@@ -1,4 +1,4 @@
-package name.lorenzani.andrea.whitbreadtest.controllers;
+package name.lorenzani.andrea.whitbreadtest.model;
 
 import name.lorenzani.andrea.whitbreadtest.model.*;
 

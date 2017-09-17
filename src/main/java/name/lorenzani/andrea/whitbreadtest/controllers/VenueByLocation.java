@@ -1,6 +1,8 @@
-package name.lorenzani.andrea.whitbreadtest.model;
+package name.lorenzani.andrea.whitbreadtest.controllers;
 
-import name.lorenzani.andrea.whitbreadtest.controllers.VenueByLocationResponse;
+import name.lorenzani.andrea.whitbreadtest.exception.FoursquareException;
+import name.lorenzani.andrea.whitbreadtest.model.VenueByLocationResponse;
+import name.lorenzani.andrea.whitbreadtest.model.VenueResponse;
 import name.lorenzani.andrea.whitbreadtest.utils.FoursquareInvoker;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -62,17 +64,17 @@ public class VenueByLocation {
         // Please note that on the website limit is max 50 but then the api true limit is 100
         VenueResponse foursquareRes = new VenueResponse();
         try{
-            foursquareRes = invoker.invokeExplore(location, limit, params).get();
+            foursquareRes = invoker.invokeExplore(location, limit, params);
         }
-        catch (Exception e) {
+        catch (Throwable e) {
             e.printStackTrace();
+            throw new FoursquareException("Unable to call foursquare for exploring location "+location, e);
         }
         long maxToRetrieve = Math.min(foursquareRes.getResponse().getTotalResults(), maxRetrievedPerRequest); // TotalResult is a required field
         if(limit > 0 && limit < maxToRetrieve) maxToRetrieve = limit;
         VenueByLocationResponse res = new VenueByLocationResponse(location, foursquareRes);
         try {
             invoker.invokeMultipleExplore(location, res.getTotalRes(), maxToRetrieve, params)
-                   .get()
                    .forEach(venueResponse -> res.getRecommendedVenues().addAll(new VenueByLocationResponse("", venueResponse).getRecommendedVenues()));
         }
         catch (Exception e){

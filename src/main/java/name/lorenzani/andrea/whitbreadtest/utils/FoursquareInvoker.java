@@ -1,8 +1,10 @@
 package name.lorenzani.andrea.whitbreadtest.utils;
 
+import name.lorenzani.andrea.whitbreadtest.exception.FoursquareException;
 import name.lorenzani.andrea.whitbreadtest.model.VenueResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
@@ -21,6 +23,9 @@ public class FoursquareInvoker {
     private final int max4SResults;
 
     @Autowired
+    private RestTemplate restTemplate;
+
+    @Autowired
     public FoursquareInvoker(@Value("${foursquare.baseuri}") String baseUri,
                              @Value("${foursquare.explore}") String explore,
                              @Value("${foursquare.version.accepted}") String version,
@@ -37,21 +42,20 @@ public class FoursquareInvoker {
         return url+explore+location+authParams;
     }
 
-    public Future<VenueResponse> invokeExplore(String location, long limit, String otherParams) {
-        return invokeApi(getExploreUrl(location)+otherParams, limit, VenueResponse.class);
+    public VenueResponse invokeExplore(String location, long limit, String otherParams) throws Exception {
+            return invokeApi(getExploreUrl(location) + otherParams, limit, VenueResponse.class).get();
     }
 
-    public Future<List<VenueResponse>> invokeMultipleExplore(String location, long start, long end, String otherParams) {
-        return invokeMultipleApi(getExploreUrl(location)+otherParams, start, end, VenueResponse.class);
+    public List<VenueResponse> invokeMultipleExplore(String location, long start, long end, String otherParams) throws Exception {
+            return invokeMultipleApi(getExploreUrl(location)+otherParams, start, end, VenueResponse.class).get();
     }
 
     private <T> Future<T> invokeApi(String path, long limit, Class<T> clazz) {
         String limitedPath = path + ((limit>0)?String.format("&limit=%d", limit):"");
-        return threadpool.submit(() -> new RestTemplate().getForObject(limitedPath, clazz));
+        return threadpool.submit(() -> restTemplate.getForObject(limitedPath, clazz));
     }
 
     private <T> Future<List<T>> invokeMultipleApi(String path, long start, long end, Class<T> clazz){
-        CompletionService cs = new ExecutorCompletionService(threadpool);
         List<Future<T>> allSearches = new ArrayList<>();
         for(long s=start;s<end;s=s+max4SResults) {
             allSearches.add(invokeApi(path+String.format("&offset=%d", s), max4SResults, clazz));
