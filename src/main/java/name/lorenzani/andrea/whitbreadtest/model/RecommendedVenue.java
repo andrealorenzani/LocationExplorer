@@ -1,4 +1,4 @@
-package name.lorenzani.andrea.whitbreadtest.restclient;
+package name.lorenzani.andrea.whitbreadtest.model;
 
 import java.util.Optional;
 
@@ -13,6 +13,9 @@ public class RecommendedVenue {
     private String state;
     private String postalCode;
     private Double rating;
+
+    public RecommendedVenue() {
+    }
 
     public RecommendedVenue(String type, Item source) {
         this.venueType = type;

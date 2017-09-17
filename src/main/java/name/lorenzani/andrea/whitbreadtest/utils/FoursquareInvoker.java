@@ -1,8 +1,6 @@
 package name.lorenzani.andrea.whitbreadtest.utils;
 
-import name.lorenzani.andrea.whitbreadtest.restclient.RecommendedVenue;
-import name.lorenzani.andrea.whitbreadtest.restclient.VenueByLocationResponse;
-import name.lorenzani.andrea.whitbreadtest.restclient.VenueResponse;
+import name.lorenzani.andrea.whitbreadtest.model.VenueResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;

@@ -1,21 +1,15 @@
-package name.lorenzani.andrea.whitbreadtest.restclient;
+package name.lorenzani.andrea.whitbreadtest.model;
 
+import name.lorenzani.andrea.whitbreadtest.controllers.VenueByLocationResponse;
 import name.lorenzani.andrea.whitbreadtest.utils.FoursquareInvoker;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 // https://developer.foursquare.com/docs/venues/explore
 

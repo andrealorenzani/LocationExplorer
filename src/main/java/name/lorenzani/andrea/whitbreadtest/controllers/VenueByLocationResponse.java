@@ -1,5 +1,8 @@
-package name.lorenzani.andrea.whitbreadtest.restclient;
+package name.lorenzani.andrea.whitbreadtest.controllers;
 
+import name.lorenzani.andrea.whitbreadtest.model.*;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -13,7 +16,9 @@ public class VenueByLocationResponse {
     private int totalRes;
     private List<RecommendedVenue> recommendedVenues;
 
-    public VenueByLocationResponse(){}
+    public VenueByLocationResponse(){
+        recommendedVenues = new ArrayList<>();
+    }
 
     public VenueByLocationResponse(String requestedLocation, VenueResponse response) {
         this.requestedLocation=requestedLocation;

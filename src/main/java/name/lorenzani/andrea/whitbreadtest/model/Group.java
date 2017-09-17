@@ -1,4 +1,4 @@
-package name.lorenzani.andrea.whitbreadtest.restclient;
+package name.lorenzani.andrea.whitbreadtest.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
