@@ -1,5 +1,6 @@
 package name.lorenzani.andrea.whitbreadtest.controllers;
 
+import name.lorenzani.andrea.whitbreadtest.exception.FoursquareException;
 import name.lorenzani.andrea.whitbreadtest.model.VenueResponse;
 import name.lorenzani.andrea.whitbreadtest.utils.FoursquareInvoker;
 import org.junit.Assert;
@@ -43,22 +44,17 @@ public class RestServiceTest {
     @Test
     public void testMultipleInteraction()
             throws Exception {
-        for (int value = 0; value <= 1000; value++) {
-            this.server.expect(ExpectedCount.max(10), anything())
-                    .andRespond(withSuccess("{\"response\":{\"geocode\": {}, \"headerLocation\": null, \"headerFullLocation\": \"test\", \"headerLocationGranularity\": null, \"totalResults\": 0, \"groups\": []}}", MediaType.APPLICATION_JSON));
-        }
+        this.server.expect(ExpectedCount.max(10), anything())
+                .andRespond(withSuccess("{\"response\":{\"geocode\": {}, \"headerLocation\": null, \"headerFullLocation\": \"test\", \"headerLocationGranularity\": null, \"totalResults\": 0, \"groups\": []}}", MediaType.APPLICATION_JSON));
         List<VenueResponse> response = this.invoker.invokeMultipleExplore("sarzana", 0, 1000, "");
         Assert.assertEquals(10, response.size());
     }
 
-    @Test
+    @Test(expected = FoursquareException.class)
     public void testErrorInteraction()
             throws Exception {
-        for (int value = 0; value <= 1000; value++) {
-            this.server.expect(ExpectedCount.max(10), anything())
-                    .andRespond(withBadRequest());
-        }
+        this.server.expect(ExpectedCount.max(10), anything())
+                .andRespond(withBadRequest());
         List<VenueResponse> response = this.invoker.invokeMultipleExplore("sarzana", 0, 1000, "");
-        Assert.assertEquals(0, response.size());
     }
 }

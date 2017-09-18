@@ -1,5 +1,6 @@
 package name.lorenzani.andrea.whitbreadtest.utils;
 
+import name.lorenzani.andrea.whitbreadtest.exception.FoursquareException;
 import name.lorenzani.andrea.whitbreadtest.model.VenueResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -8,16 +9,16 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 @Component
 public class FoursquareInvoker {
 
-    private static final Set<String> sections = new HashSet<>(Arrays.asList("food", "drinks", "coffee", "shops", "arts", "outdoors", "sights", "trending", "specials", "nextVenues", "topPicks"));
-    private final ExecutorService threadpool = Executors.newCachedThreadPool();
     // Define the logger object for this class
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
@@ -46,44 +47,46 @@ public class FoursquareInvoker {
         return url + explore + location + authParams;
     }
 
-    public VenueResponse invokeExplore(String location, long limit, String otherParams) throws Exception {
-        return invokeApi(getExploreUrl(location) + otherParams, limit, VenueResponse.class).get();
-    }
-
-    public List<VenueResponse> invokeMultipleExplore(String location, long start, long end, String otherParams) throws Exception {
-        return invokeMultipleApi(getExploreUrl(location) + otherParams, start, end, VenueResponse.class).get();
-    }
-
-    private <T> Future<T> invokeApi(String path, long limit, Class<T> clazz) {
-        String limitedPath = path + ((limit > 0) ? String.format("&limit=%d", limit) : "");
-        return threadpool.submit(() -> restTemplate.getForObject(limitedPath, clazz));
-    }
-
-    private <T> Future<List<T>> invokeMultipleApi(String path, long start, long end, Class<T> clazz) {
-        List<Future<T>> allSearches = new ArrayList<>();
-        for (long s = start; s < end; s = s + max4SResults) {
-            allSearches.add(invokeApi(path + String.format("&offset=%d", s), max4SResults, clazz));
+    public VenueResponse invokeExplore(String location, long limit, String otherParams) {
+        CompletableFuture<VenueResponse> res = invokeApi(getExploreUrl(location) + otherParams, limit, VenueResponse.class);
+        try {
+            return res.get();
+        } catch (Throwable e) {
+            String requestId = UUID.randomUUID().toString();
+            log.error(String.format("ReqId [%s] Error invoking %s", requestId, getExploreUrl(location) + otherParams), e);
+            throw new FoursquareException(requestId, "Error invoking the foursquare explore api for location " + location + ": " + e.getMessage(), e);
         }
-        return threadpool.submit(() -> {
-            if (!allSearches.stream().allMatch(Future::isDone)) {
-                while (!allSearches.stream().allMatch(Future::isDone)) {
-                    try {
-                        Thread.sleep(10);
-                    } catch (Exception e) {
-                        log.error("Error waiting for future to finish", e);
-                    }
-                    allSearches.removeIf(Future::isCancelled);
-                }
-            }
-            List<T> returnList = new ArrayList<>();
-            allSearches.forEach(fut -> {
-                try {
-                    returnList.add(fut.get());
-                } catch (Exception e) {
-                    log.error("Error executing the search: " + e.getMessage());
-                }
-            });
-            return returnList;
-        });
+    }
+
+    public List<VenueResponse> invokeMultipleExplore(String location, long start, long end, String otherParams) {
+        CompletableFuture<List<VenueResponse>> res = invokeMultipleApi(getExploreUrl(location) + otherParams, start, end, VenueResponse.class);
+        try {
+            return res.get();
+        } catch (Throwable e) {
+            String requestId = UUID.randomUUID().toString();
+            log.error(String.format("ReqId [%s] Error invoking multiple [%d,%d] %s", requestId, start, end, getExploreUrl(location) + otherParams), e);
+            throw new FoursquareException(requestId, "Error invoking the foursquare explore api for location " + location + ": " + e.getMessage(), e);
+        }
+    }
+
+    private <T> CompletableFuture<T> invokeApi(String path, long limit, Class<T> clazz) {
+        String limitedPath = path + ((limit > 0) ? String.format("&limit=%d", limit) : "");
+        return CompletableFuture.supplyAsync(() ->
+                restTemplate.getForObject(limitedPath, clazz)
+        );
+    }
+
+    private <T> CompletableFuture<List<T>> invokeMultipleApi(String path, long start, long end, Class<T> clazz) {
+        if (start > end) {
+            return CompletableFuture.completedFuture(Collections.emptyList());
+        }
+
+        List<CompletableFuture<T>> allSearches = new ArrayList<>();
+        for (long s = start; s < end; s = s + max4SResults) {
+            allSearches.add(invokeApi(path + String.format("&offset=%d", s), Math.min(max4SResults, end - s), clazz));
+        }
+        return CompletableFuture.supplyAsync(() -> allSearches.stream()
+                .map(CompletableFuture::join)
+                .collect(Collectors.toList()));
     }
 }

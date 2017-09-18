@@ -11,13 +11,15 @@ import java.util.HashMap;
 import java.util.Map;
 
 @ControllerAdvice
-class BookmarkControllerAdvice {
+class FoursquareExceptionHandler {
 
     @ResponseBody
     @ExceptionHandler(FoursquareException.class)
-    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     Map<String, String> userNotFoundExceptionHandler(FoursquareException ex) {
         Map<String, String> res = new HashMap<>();
+        res.put("errorCode", "1");
+        res.put("requestId", ex.getRequestId());
         res.put("message", ex.getMessage());
         res.put("cause", ex.getCause().getMessage());
         return res;
