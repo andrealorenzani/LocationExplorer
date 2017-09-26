@@ -47,26 +47,19 @@ public class FoursquareInvoker {
         return url + explore + location + authParams;
     }
 
-    public VenueResponse invokeExplore(String location, long limit, String otherParams) {
-        CompletableFuture<VenueResponse> res = invokeApi(getExploreUrl(location) + otherParams, limit, VenueResponse.class);
-        try {
-            return res.get();
-        } catch (Throwable e) {
-            String requestId = UUID.randomUUID().toString();
-            log.error(String.format("ReqId [%s] Error invoking %s", requestId, getExploreUrl(location) + otherParams), e);
-            throw new FoursquareException(requestId, "Error invoking the foursquare explore api for location " + location + ": " + e.getMessage(), e);
-        }
+    public CompletableFuture<VenueResponse> invokeExplore(String location, long limit, String otherParams) {
+        return invokeApi(getExploreUrl(location) + otherParams, limit, VenueResponse.class)
+                .exceptionally(ex -> {
+                    throw new RuntimeException("Error invoking the foursquare explore api for location " + location + ": " + ex.getMessage(), ex);
+                });
+
     }
 
-    public List<VenueResponse> invokeMultipleExplore(String location, long start, long end, String otherParams) {
-        CompletableFuture<List<VenueResponse>> res = invokeMultipleApi(getExploreUrl(location) + otherParams, start, end, VenueResponse.class);
-        try {
-            return res.get();
-        } catch (Throwable e) {
-            String requestId = UUID.randomUUID().toString();
-            log.error(String.format("ReqId [%s] Error invoking multiple [%d,%d] %s", requestId, start, end, getExploreUrl(location) + otherParams), e);
-            throw new FoursquareException(requestId, "Error invoking the foursquare explore api for location " + location + ": " + e.getMessage(), e);
-        }
+    public CompletableFuture<List<VenueResponse>> invokeMultipleExplore(String location, long start, long end, String otherParams) {
+        return invokeMultipleApi(getExploreUrl(location) + otherParams, start, end, VenueResponse.class)
+                .exceptionally(ex -> {
+                    throw new RuntimeException(String.format("Error with multiple invoke (start: %d, end: %d) of the foursquare explore api for location %s and params '%s': $s", start, end, location, otherParams, ex.getMessage()), ex);
+                });
     }
 
     private <T> CompletableFuture<T> invokeApi(String path, long limit, Class<T> clazz) {

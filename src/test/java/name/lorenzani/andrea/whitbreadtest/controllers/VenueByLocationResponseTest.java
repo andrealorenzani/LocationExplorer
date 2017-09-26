@@ -13,15 +13,19 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Collections;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @RunWith(SpringRunner.class)
@@ -47,7 +51,8 @@ public class VenueByLocationResponseTest {
         emptyRes.setGroups(Collections.emptyList());
         VenueResponse venueRes = new VenueResponse();
         venueRes.setResponse(emptyRes);
-        Mockito.when(fsinvoker.invokeExplore("sarzana", 0, "")).thenReturn(venueRes);
+        Mockito.when(fsinvoker.invokeExplore("sarzana", 0, "")).thenReturn(CompletableFuture.completedFuture(venueRes));
+        Mockito.when(fsinvoker.invokeMultipleExplore(Mockito.eq("sarzana"), Mockito.anyLong(), Mockito.anyLong(), Mockito.anyString())).thenReturn(CompletableFuture.completedFuture(Collections.emptyList()));
     }
 
     @Test
@@ -58,7 +63,8 @@ public class VenueByLocationResponseTest {
 
     @Test
     public void itCanSearchSarzana() throws Exception {
-        this.mvc.perform(get("/search/sarzana").accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk()).andExpect(content().string("{\"requestedLocation\":\"sarzana\",\"location\":null,\"headerFullLocation\":null,\"displayLocation\":null,\"granularity\":null,\"totalRes\":0,\"recommendedVenues\":[]}"));
+        MvcResult res = this.mvc.perform(get("/search/sarzana").accept(MediaType.APPLICATION_JSON))
+                .andExpect(request().asyncStarted()).andReturn();
+        this.mvc.perform(asyncDispatch(res)).andExpect(status().isOk()).andExpect(content().string("{\"requestedLocation\":\"sarzana\",\"location\":null,\"headerFullLocation\":null,\"displayLocation\":null,\"granularity\":null,\"totalRes\":0,\"recommendedVenues\":[]}"));
     }
 }

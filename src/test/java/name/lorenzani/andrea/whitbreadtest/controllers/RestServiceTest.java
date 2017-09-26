@@ -14,6 +14,8 @@ import org.springframework.test.web.client.ExpectedCount;
 import org.springframework.test.web.client.MockRestServiceServer;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.anything;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
@@ -37,7 +39,7 @@ public class RestServiceTest {
             throws Exception {
         this.server.expect(requestTo("https://api.foursquare.com/v2/venues/explore?near=sarzana&client_id=FYWEJAKHBGWP432GHW212YWH2KI2UAUVJD3WSPIQVEJ442OW&client_secret=O2PFMVK1G43JCJRTKWSZRSXVDSAMRL5FUTN4BYM22JHQNFU4&v=20170916&m=foursquare&limit=1"))
                 .andRespond(withSuccess("{\"response\":{\"geocode\": {}, \"headerLocation\": null, \"headerFullLocation\": \"test\", \"headerLocationGranularity\": null, \"totalResults\": 0, \"groups\": []}}", MediaType.APPLICATION_JSON));
-        VenueResponse response = this.invoker.invokeExplore("sarzana", 1, "");
+        VenueResponse response = this.invoker.invokeExplore("sarzana", 1, "").get();
         Assert.assertTrue(response.getResponse().getHeaderFullLocation().equals("test"));
     }
 
@@ -46,15 +48,19 @@ public class RestServiceTest {
             throws Exception {
         this.server.expect(ExpectedCount.max(10), anything())
                 .andRespond(withSuccess("{\"response\":{\"geocode\": {}, \"headerLocation\": null, \"headerFullLocation\": \"test\", \"headerLocationGranularity\": null, \"totalResults\": 0, \"groups\": []}}", MediaType.APPLICATION_JSON));
-        List<VenueResponse> response = this.invoker.invokeMultipleExplore("sarzana", 0, 1000, "");
+        List<VenueResponse> response = this.invoker.invokeMultipleExplore("sarzana", 0, 1000, "").get();
         Assert.assertEquals(10, response.size());
     }
 
-    @Test(expected = FoursquareException.class)
+    @Test(expected = RuntimeException.class)
     public void testErrorInteraction()
-            throws Exception {
+            throws Throwable {
         this.server.expect(ExpectedCount.max(10), anything())
                 .andRespond(withBadRequest());
-        List<VenueResponse> response = this.invoker.invokeMultipleExplore("sarzana", 0, 1000, "");
+        CompletableFuture<List<VenueResponse>> response = this.invoker.invokeMultipleExplore("sarzana", 0, 1000, "");
+        try{ response.get(); }
+        catch(ExecutionException ex){
+            throw ex.getCause();
+        }
     }
 }
