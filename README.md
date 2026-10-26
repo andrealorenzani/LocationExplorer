@@ -19,7 +19,7 @@ The project was written in 2017 on Spring Boot 1.5 and Java 8 and was upgraded i
 | HTTP client | `RestTemplate` | `RestClient` |
 | Concurrency | `CompletableFuture` chains in the controller, on the common pool | plain blocking code; pages are fetched in parallel on virtual threads |
 | Model | 9 mutable classes with getters and setters | records |
-| Tests | JUnit 4, `SpringRunner`, `@MockBean`, 10 tests | JUnit 5, AssertJ, 32 tests (see below) |
+| Tests | JUnit 4, `SpringRunner`, `@MockBean`, 12 tests | JUnit 5, AssertJ, 32 tests (see below) |
 | Maven wrapper | Maven 3.5.0 with a binary jar in git | Maven 3.9.11, script-only wrapper |
 | Project name | `whitbread-test`, package `whitbreadtest` | `location-explorer`, package `locationexplorer` |
 
