@@ -1,12 +1,12 @@
-package name.lorenzani.andrea.whitbreadtest.exception;
+package name.lorenzani.andrea.locationexplorer.exception;
 
 public class FoursquareException extends RuntimeException {
 
     private final String requestId;
 
-    public FoursquareException(String reqid, String message, Throwable cause) {
+    public FoursquareException(String requestId, String message, Throwable cause) {
         super(message, cause);
-        this.requestId = reqid;
+        this.requestId = requestId;
     }
 
     public String getRequestId() {
